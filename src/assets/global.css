@@ -1,0 +1,173 @@
+:root {
+    /* 浅色主题 (默认) */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-card: #ffffff;
+    
+    --text-primary: #333333;
+    --text-secondary: #666666;
+    --text-link: #42b983;
+    --text-link-hover: #318c63;
+    --text-on-accent: #ffffff; /* 在强调色上的文字颜色 */
+    
+    --border-color: #e0e0e0;
+    --shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.1); /* 悬停阴影 */
+    
+    /* 切换按钮图标 */
+    --theme-toggle-icon: '☀️';
+  }
+  
+  [data-theme="dark"] {
+    /* 深色主题 */
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #222222;
+    --bg-card: #2d2d2d;
+    
+    --text-primary: #e0e0e0;
+    --text-secondary: #aaaaaa;
+    --text-link: #4db8a1;
+    --text-link-hover: #5ec5a9;
+    --text-on-accent: #f5f5f5; /* 在强调色上的文字颜色 */
+    
+    --border-color: #444444;
+    --shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.4); /* 悬停阴影 */
+    
+    /* 切换按钮图标 */
+    --theme-toggle-icon: '🌙';
+  }
+  
+  /* 基础全局样式 */
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color 0.3s, color 0.3s;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, 
+      Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
+  }
+  
+  a {
+    color: var(--text-link);
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  
+  a:hover {
+    color: var(--text-link-hover);
+  }
+  
+  /* 布局相关颜色应用 */
+  .main-nav {
+    background-color: var(--bg-secondary);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  footer {
+    background-color: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 1rem 0;
+  }
+  
+  /* 卡片全局样式 */
+  .card {
+    background-color: var(--bg-card);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s;
+  }
+  
+  /* 按钮全局样式 */
+  .button {
+    display: inline-block;
+    padding: 0.8rem 1.5rem;
+    background-color: var(--text-link);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .button:hover {
+    background-color: var(--text-link-hover);
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+  }
+  
+  .button.secondary {
+    background-color: transparent;
+    color: var(--text-link);
+    border: 1px solid var(--text-link);
+  }
+  
+  .button.secondary:hover {
+    background-color: var(--bg-secondary);
+  }
+  
+  /* 路由链接激活状态 */
+  .router-link-active:not(.button) {
+    color: var(--text-link);
+    font-weight: 500;
+  }
+  
+  /* 表单元素 */
+  input, textarea, select {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.7rem;
+    font: inherit;
+    transition: border-color 0.3s;
+  }
+  
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--text-link);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(77, 184, 161, 0.2);
+  }
+  
+  /* 页面内容容器 */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+  
+  /* 图片样式 */
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
+  
+  /* 响应式布局调整 */
+  @media (max-width: 768px) {
+    .main-nav {
+      padding: 0.8rem 1rem;
+    }
+    
+    .button, .button.secondary {
+      width: 100%;
+      margin-bottom: 0.5rem;
+    }
+  }
+  
+  /* 临时样式，让布局更明显 */
+  main > div:not(.home-container) {
+    min-height: 300px;
+    padding: 20px;
+    border: 1px dashed var(--text-link);
+    border-radius: 4px;
+    margin: 20px 0;
+  }
