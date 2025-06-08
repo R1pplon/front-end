@@ -11,7 +11,7 @@ import request from "@/utils/request";
 export const createComment = async (data) => {
   try {
     const response = await request({
-      url: "/comment",
+      url: "/comment/",
       method: "post",
       data,
     });

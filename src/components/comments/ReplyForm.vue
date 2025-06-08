@@ -57,21 +57,15 @@ const submit = async () => {
     isSubmitting.value = true;
 
     try {
-        // 模拟API调用
-        // await addReply(props.parentId, {
-        //   content: content.value,
-        //   articleId: props.articleId,
-        //   author: props.currentUser.id
-        // });
+        // 构建回复数据
+        const replyData = {
+            content: content.value.trim(),
+            articleId: props.articleId,
+            parentId: props.parentId
+        };
 
         // 发出提交事件
-        emit('submit', {
-            id: Date.now(),
-            content: content.value,
-            username: props.currentUser.username,
-            avatarUrl: props.currentUser.avatar
-        });
-
+        emit('submit', content.value.trim());
         content.value = '';
 
     } catch (error) {

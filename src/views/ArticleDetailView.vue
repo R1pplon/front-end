@@ -76,7 +76,7 @@
 
             <div class="comments-list">
                 <CommentTree v-if="comments.length" :comments="commentsTree" :article-id="article.id"
-                    :current-user="currentUser" @reply="onCommentReply" @like="onCommentLike" />
+                    :current-user="currentUser" @reply="onCommentReply" @delete="handleDeleteComment" />
 
                 <div v-else class="no-comments">
                     还没有评论，来发表第一条评论吧！
@@ -88,15 +88,18 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, nextTick } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { getArticleById } from '@/api/article';
 import { renderMarkdown } from '@/utils/markdown';
 import CommentTree from '@/components/comments/CommentTree.vue';
-import { getArticleComments, addComment } from '@/api/article';
-import { ElMessage } from 'element-plus';
+import { getArticleComments, addComment, deleteComment } from '@/api/article';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { useAuthStore } from '@/stores/auth';
 import request from '@/utils/request';
 
 const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
 
 // 文章数据
 const article = ref(null);
@@ -136,28 +139,6 @@ const formatDate = (dateString) => {
     }).format(date);
 };
 
-// 修改 fetchArticle 方法
-const fetchArticle = async () => {
-    loading.value = true;
-    error.value = null;
-    const articleId = route.params.id;
-
-    try {
-        const res = await getArticleById(articleId);
-        if (res.data && res.data.code === 200) {
-            article.value = res.data.data;
-            console.log('文章详情:', article.value);
-        } else {
-            throw new Error(res.data?.message || '加载文章失败');
-        }
-    } catch (err) {
-        error.value = err.message || '加载文章失败，请稍后重试';
-        console.error('获取文章详情失败:', err);
-    } finally {
-        loading.value = false;
-    }
-};
-
 // 评论状态
 const isCommentSubmitting = ref(false);
 const commentTextarea = ref(null);
@@ -165,11 +146,24 @@ const commentRows = ref(4);
 const replyingTo = ref(null); // 当前正在回复的评论
 const defaultAvatar = 'https://i.pravatar.cc/100';
 
-// 模拟当前用户
-const currentUser = reactive({
-    id: 1,
-    username: 'R1pple',
-    avatar: 'https://i.pravatar.cc/100?id=3'
+// 获取当前用户信息
+const currentUser = computed(() => {
+    if (authStore.isLoggedIn && authStore.user) {
+        // 获取真正的用户数据（从 data 字段中）
+        const userData = authStore.user.data || authStore.user;
+        
+        return {
+            id: userData.id,
+            username: userData.username || authStore.username,
+            avatar: userData.avatar || authStore.avatar
+        };
+    }
+    
+    return {
+        id: null,
+        username: '',
+        avatar: 'https://i.pravatar.cc/100?id=3'
+    };
 });
 
 // 将平铺评论转换为树形结构
@@ -201,65 +195,54 @@ const commentsTree = computed(() => {
 
 // 调整评论框高度
 const adjustCommentHeight = () => {
-    nextTick(() => {
-        if (commentTextarea.value) {
-            commentTextarea.value.style.height = 'auto';
-            commentTextarea.value.style.height = `${Math.min(commentTextarea.value.scrollHeight, 200)}px`;
-        }
-    });
-};
-
-// 修改 fetchComments 方法
-const fetchComments = async () => {
-    try {
-        console.log('正在获取文章评论，文章ID:', article.value.id);
-        const res = await getArticleComments(article.value.id);
-        
-        if (res.data && res.data.code === 200) {
-            comments.value = res.data.data || [];
-            console.log('获取评论成功:', comments.value);
-        } else {
-            throw new Error(res.data?.message || '获取评论失败');
-        }
-    } catch (error) {
-        console.error('获取评论失败:', error);
-        if (error.response) {
-            console.error('错误响应:', error.response.data);
-        }
-        comments.value = []; // 出错时清空评论列表
+    if (commentTextarea.value) {
+        commentTextarea.value.style.height = 'auto';
+        commentTextarea.value.style.height = `${Math.min(commentTextarea.value.scrollHeight, 200)}px`;
     }
 };
 
-// 修改提交评论方法
+// 获取评论列表
+const fetchComments = async () => {
+    try {
+        const res = await getArticleComments(parseInt(route.params.id));
+        if (res.data && res.data.code === 200) {
+            comments.value = res.data.data;
+        } else {
+            ElMessage.error(res.data?.message || '获取评论失败');
+        }
+    } catch (error) {
+        console.error('获取评论失败:', error);
+        ElMessage.error('获取评论失败，请稍后重试');
+    }
+};
+
+// 提交评论
 const submitComment = async () => {
-    if (newComment.value.trim().length === 0) return;
+    // 检查用户是否已登录
+    if (!authStore.isLoggedIn) {
+        ElMessage.warning('请先登录后再评论');
+        router.push('/login');
+        return;
+    }
+
+    if (!newComment.value.trim()) {
+        ElMessage.warning('请输入评论内容');
+        return;
+    }
 
     isCommentSubmitting.value = true;
-
     try {
         const commentData = {
-            articleId: article.value.id,
-            content: newComment.value,
-            parentId: replyingTo.value?.id || null
+            content: newComment.value.trim(),
+            articleId: parseInt(route.params.id),
+            parentId: null // 顶级评论
         };
 
         const res = await addComment(commentData);
-        
         if (res.data && res.data.code === 200) {
-            // 提交成功后重新获取评论列表
-            await fetchComments();
-            
-            // 清空评论框
-            newComment.value = '';
-            replyingTo.value = null;
-
-            // 调整回原始大小
-            if (commentTextarea.value) {
-                commentTextarea.value.style.height = 'auto';
-                commentRows.value = 4;
-            }
-
             ElMessage.success('评论发表成功');
+            newComment.value = ''; // 清空输入框
+            await fetchComments(); // 重新获取评论列表
         } else {
             throw new Error(res.data?.message || '评论发表失败');
         }
@@ -271,41 +254,90 @@ const submitComment = async () => {
     }
 };
 
-// 修改评论回复方法
+// 回复评论
 const onCommentReply = async (comment, content) => {
-    if (content) {
-        try {
-            const replyData = {
-                articleId: article.value.id,
-                content: content,
-                parentId: comment.id
-            };
+    // 如果没有content参数，说明是点击回复按钮，不需要处理
+    if (!content) {
+        return;
+    }
 
-            const res = await addComment(replyData);
-            
-            if (res.data && res.data.code === 200) {
-                // 重新获取评论列表
-                await fetchComments();
-                ElMessage.success('回复发表成功');
-            } else {
-                throw new Error(res.data?.message || '回复发表失败');
-            }
-        } catch (error) {
-            console.error('发表回复失败:', error);
-            ElMessage.error(error.message || '回复发表失败，请稍后重试');
+    // 检查用户是否已登录
+    if (!authStore.isLoggedIn) {
+        ElMessage.warning('请先登录后再回复');
+        router.push('/login');
+        return;
+    }
+
+    if (!content.trim()) {
+        ElMessage.warning('请输入回复内容');
+        return;
+    }
+
+    try {
+        const replyData = {
+            content: content.trim(),
+            articleId: parseInt(route.params.id),
+            parentId: comment.id
+        };
+
+        const res = await addComment(replyData);
+        if (res.data && res.data.code === 200) {
+            ElMessage.success('回复发表成功');
+            await fetchComments(); // 重新获取评论列表
+        } else {
+            throw new Error(res.data?.message || '回复发表失败');
         }
-    } else {
-        // 点击回复按钮
-        replyingTo.value = comment;
-        newComment.value = `@${comment.username} `;
+    } catch (error) {
+        console.error('提交回复失败:', error);
+        ElMessage.error(error.message || '回复发表失败，请稍后重试');
+    }
+};
 
-        // 调整高度
-        nextTick(() => {
-            if (commentTextarea.value) {
-                commentTextarea.value.focus();
-                adjustCommentHeight();
-            }
-        });
+// 删除评论
+const handleDeleteComment = async (commentId) => {
+    try {
+        // 使用原生确认对话框
+        const confirmed = confirm('确定要删除这条评论吗？');
+        
+        if (!confirmed) {
+            return;
+        }
+
+        const res = await deleteComment(commentId);
+        
+        if (res.data && res.data.code === 200) {
+            ElMessage.success('评论删除成功');
+            await fetchComments(); // 重新获取评论列表
+        } else {
+            throw new Error(res.data?.message || '删除评论失败');
+        }
+    } catch (error) {
+        console.error('删除评论失败:', error);
+        ElMessage.error(error.message || '删除评论失败，请稍后重试');
+    }
+};
+
+// 在获取文章成功后获取评论
+const fetchArticle = async () => {
+    loading.value = true;
+    error.value = null;
+    const articleId = route.params.id;
+
+    try {
+        const res = await getArticleById(articleId);
+        if (res.data && res.data.code === 200) {
+            article.value = res.data.data;
+            console.log('文章详情:', article.value);
+            // 获取文章评论
+            await fetchComments();
+        } else {
+            throw new Error(res.data?.message || '加载文章失败');
+        }
+    } catch (err) {
+        error.value = err.message || '加载文章失败，请稍后重试';
+        console.error('获取文章详情失败:', err);
+    } finally {
+        loading.value = false;
     }
 };
 

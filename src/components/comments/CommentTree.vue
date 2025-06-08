@@ -3,12 +3,12 @@
         <div v-for="comment in comments" :key="comment.id" class="comment-node"
             :class="{ 'has-replies': comment.replies && comment.replies.length }"
             :style="{ 'margin-left': `${indent * 20}px` }">
-            <CommentItem :comment="comment" :article-id="articleId" :current-user="currentUser" @reply="onReply"
-                @like="onLike" />
+            <CommentItem :comment="comment" :article-id="articleId" :current-user="currentUser" :indent="indent" @reply="onReply"
+                @like="onLike" @delete="onDelete" />
 
             <CommentTree v-if="comment.replies && comment.replies.length" :comments="comment.replies"
                 :article-id="articleId" :indent="indent + 1" :current-user="currentUser" @reply="onReply"
-                @like="onLike" />
+                @like="onLike" @delete="onDelete" />
         </div>
     </div>
 </template>
@@ -36,14 +36,18 @@ const props = defineProps({
     }
 });
 
-const emit = defineEmits(['reply', 'like']);
+const emit = defineEmits(['reply', 'like', 'delete']);
 
-const onReply = (comment) => {
-    emit('reply', comment);
+const onReply = (...args) => {
+    emit('reply', ...args);
 };
 
 const onLike = (commentId) => {
     emit('like', commentId);
+};
+
+const onDelete = (commentId) => {
+    emit('delete', commentId);
 };
 </script>
 

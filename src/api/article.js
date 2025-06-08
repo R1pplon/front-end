@@ -29,7 +29,7 @@ export const getArticleComments = (articleId) => {
 
 // 添加评论
 export const addComment = (data) => {
-  return request.post("/comment", data);
+  return request.post("/comment/", data);
 };
 
 // 删除评论
