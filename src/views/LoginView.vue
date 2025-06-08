@@ -155,19 +155,17 @@ const handleSubmit = async () => {
             password: formData.password
         });
 
-        console.log('登录响应:', response); // 添加日志以便调试
+        console.log('登录响应:', response);
 
         // 处理登录响应
-        if (response.code === 200) {
-            // 存储登录凭证和用户信息
-            const token = response.token || 'your_jwt_token_here';
+        if (response.success && response.data) {
             const userData = response.data;
-
-            setToken(token);
+            
+            // 存储用户信息
             setUserInfo(userData);
 
-            // 关键添加：更新全局认证状态
-            authStore.login(token, userData);
+            // 更新全局认证状态（token已通过cookie设置）
+            authStore.login(null, userData);
 
             // 处理记住我选项
             if (rememberMe.value) {

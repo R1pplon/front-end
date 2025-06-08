@@ -1,9 +1,5 @@
 <template>
     <div class="reply-form">
-        <div class="form-header">
-            <img :src="currentUser.avatar || defaultAvatar" :alt="currentUser.username" class="avatar" />
-            <span class="username">回复 {{ currentUser.username }}</span>
-        </div>
 
         <div class="form-group">
             <textarea v-model="content" placeholder="写下您的回复..." :rows="rows" ref="textarea"

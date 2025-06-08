@@ -37,34 +37,51 @@ export const registerUser = async (data) => {
       data,
     });
 
-    // 检查响应格式
-    if (!response || typeof response !== "object") {
-      throw new Error("注册请求返回了无效的响应格式");
-    }
-
+    // response 已经是 response.data 了
     return {
-      success: response.code === ErrorCodes.SUCCESS,
-      code: response.code || ErrorCodes.INTERNAL_SERVER_ERROR,
-      message: response.message || "未知错误",
-      data: response.data || null,
+      success: true,
+      code: response.code,
+      message: response.message || "注册成功",
+      data: response.data,
     };
   } catch (error) {
-    // 处理网络错误或请求失败
     console.error("注册请求失败:", error);
 
-    let errorCode = ErrorCodes.INTERNAL_SERVER_ERROR;
-    let errorMessage = "网络请求失败，请稍后重试";
-
-    // 尝试解析服务器返回的错误
+    // 如果是请求错误
     if (error.response) {
-      errorCode = error.response.status || errorCode;
-      errorMessage = error.response.data?.message || errorMessage;
+      return {
+        success: false,
+        code: error.response.status,
+        message: error.response.data?.message || "注册失败",
+        data: null,
+      };
     }
 
+    // 如果是网络错误
+    if (error.code === "ERR_NETWORK") {
+      return {
+        success: false,
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: "网络连接失败，请检查网络",
+        data: null,
+      };
+    }
+
+    // 如果是超时错误
+    if (error.code === "ECONNABORTED") {
+      return {
+        success: false,
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: "请求超时，请稍后重试",
+        data: null,
+      };
+    }
+
+    // 其他错误
     return {
       success: false,
-      code: errorCode,
-      message: errorMessage,
+      code: ErrorCodes.INTERNAL_SERVER_ERROR,
+      message: error.message || "注册失败，请稍后重试",
       data: null,
     };
   }
@@ -76,18 +93,6 @@ export const registerUser = async (data) => {
  * @param {string} data.username - 用户名
  * @param {string} data.password - 密码
  * @returns {Promise<Object>} API响应
- *
- * 预期响应格式:
- * {
- *   code: 200,
- *   message: 'success',
- *   token: 'jwt_token_here',
- *   data: {
- *     id: 123,
- *     username: 'example',
- *     avatarUrl: '/path/to/avatar.jpg'
- *   }
- * }
  */
 export const loginUser = async (data) => {
   try {
@@ -97,43 +102,51 @@ export const loginUser = async (data) => {
       data,
     });
 
-    // 检查响应格式
-    if (!response || typeof response !== "object") {
-      throw new Error("登录请求返回了无效的响应格式");
-    }
-
-    // 确保有token字段（后端可能在token字段也可能在access_token）
-    const token = response.token || response.access_token;
-
-    if (!token) {
-      throw new Error("登录响应中未包含token");
-    }
-
+    // response 已经是 response.data 了
     return {
-      success: response.code === ErrorCodes.SUCCESS,
-      code: response.code || ErrorCodes.INTERNAL_SERVER_ERROR,
-      message: response.message || "未知错误",
-      token: token,
-      data: response.data || null,
+      success: true,
+      code: response.code,
+      message: response.message || "登录成功",
+      data: response.data,
     };
   } catch (error) {
-    // 处理网络错误或请求失败
     console.error("登录请求失败:", error);
 
-    let errorCode = ErrorCodes.INTERNAL_SERVER_ERROR;
-    let errorMessage = "网络请求失败，请稍后重试";
-
-    // 尝试解析服务器返回的错误
+    // 如果是请求错误
     if (error.response) {
-      errorCode = error.response.status || errorCode;
-      errorMessage = error.response.data?.message || errorMessage;
+      return {
+        success: false,
+        code: error.response.status,
+        message: error.response.data?.message || "登录失败",
+        data: null,
+      };
     }
 
+    // 如果是网络错误
+    if (error.code === "ERR_NETWORK") {
+      return {
+        success: false,
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: "网络连接失败，请检查网络",
+        data: null,
+      };
+    }
+
+    // 如果是超时错误
+    if (error.code === "ECONNABORTED") {
+      return {
+        success: false,
+        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+        message: "请求超时，请稍后重试",
+        data: null,
+      };
+    }
+
+    // 其他错误
     return {
       success: false,
-      code: errorCode,
-      message: errorMessage,
-      token: null,
+      code: ErrorCodes.INTERNAL_SERVER_ERROR,
+      message: error.message || "登录失败，请稍后重试",
       data: null,
     };
   }

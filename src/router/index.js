@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import BasicLayout from "@/components/Layouts/BasicLayout.vue";
-import { isAuthenticated } from "@/utils/auth";
+import { useAuthStore } from "@/stores/auth";
 
 const routes = [
   {
@@ -96,45 +96,43 @@ router.beforeEach((to, from, next) => {
     document.title = `${to.meta.title} - 我的博客`;
   }
 
-  const isAuthenticatedUser = isAuthenticated();
+  const authStore = useAuthStore();
+
+  // 检查是否仅限访客访问（如登录/注册页面）
+  if (to.matched.some((record) => record.meta.guest)) {
+    if (authStore.isLoggedIn) {
+      // 已登录用户重定向到首页
+      next("/profile");
+      return;
+    }
+  }
 
   // 检查是否需要认证
   if (to.matched.some((record) => record.meta.requiresAuth)) {
-    if (!isAuthenticatedUser) {
+    if (!authStore.isLoggedIn) {
       // 未登录用户重定向到登录页，携带原访问路径
       next({
         path: "/login",
         query: { redirect: to.fullPath },
       });
-    } else {
-      // 如果还需要管理员权限
-      if (to.matched.some((record) => record.meta.requiresAdmin)) {
-        // 这里添加检查是否是管理员的逻辑
-        const userInfo = JSON.parse(localStorage.getItem("user_info") || "{}");
-        const isAdmin = userInfo.role === "admin";
+      return;
+    }
 
-        if (!isAdmin) {
-          // 非管理员用户重定向到首页或权限不足页面
-          next("/");
-        } else {
-          next();
-        }
-      } else {
-        next();
+    // 检查管理员权限
+    if (to.matched.some((record) => record.meta.requiresAdmin)) {
+      const userInfo = authStore.user;
+      const isAdmin = userInfo?.role === 0; // 假设role为0表示管理员
+
+      if (!isAdmin) {
+        // 非管理员用户重定向到首页或权限不足页面
+        next("/");
+        return;
       }
     }
   }
-  // 检查是否仅限访客访问（如登录/注册页面）
-  else if (to.matched.some((record) => record.meta.guest)) {
-    if (isAuthenticatedUser) {
-      // 已登录用户重定向到首页
-      next("/");
-    } else {
-      next();
-    }
-  } else {
-    next();
-  }
+
+  // 其他情况正常放行
+  next();
 });
 
 export default router;

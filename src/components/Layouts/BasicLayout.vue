@@ -21,8 +21,8 @@
                     <!-- 使用全局状态 -->
                     <template v-else-if="authStore.isLoggedIn">
                         <router-link to="/profile" class="user-info">
-                            <img :src="userAvatar" class="avatar" alt="用户头像">
-                            <span>{{ username }}</span>
+                            <img :src="authStore.avatar || defaultAvatar" class="avatar" alt="用户头像">
+                            <span>{{ authStore.username }}</span>
                         </router-link>
                         <button @click="logout" class="logout-btn">退出</button>
                     </template>
@@ -53,6 +53,7 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/auth';
 import { logout as authLogout } from '@/utils/auth';
+import defaultAvatar from '@/assets/default-avatar.jpg';
 
 const router = useRouter();
 
@@ -60,14 +61,19 @@ const router = useRouter();
 const authStore = useAuthStore();
 const { isLoggedIn, user } = storeToRefs(authStore);
 
-// 计算属性：用户头像
-const userAvatar = computed(() => {
-    return user.value?.avatarUrl || '/default-avatar.jpg';
-});
+// 用户头像处理
+const userAvatar = ref(defaultAvatar);
 
-// 计算属性：用户名
-const username = computed(() => {
-    return user.value?.username || '用户';
+// 监听头像加载错误
+const handleAvatarError = () => {
+    userAvatar.value = defaultAvatar;
+};
+
+// 在组件挂载时设置初始头像
+onMounted(() => {
+    if (authStore.user?.avatarUrl) {
+        userAvatar.value = authStore.user.avatarUrl;
+    }
 });
 
 // 登出功能
@@ -122,6 +128,9 @@ onMounted(() => {
         isDarkTheme.value = true;
         document.documentElement.setAttribute('data-theme', 'dark');
     }
+    
+    // 初始化认证状态
+    authStore.init();
 });
 </script>
 

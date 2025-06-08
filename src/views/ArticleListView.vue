@@ -120,12 +120,20 @@ const fetchArticles = async () => {
         };
 
         const res = await getArticles(params);
-        const response = res.data;
-        articles.value = response.articles || [];
-        total.value = response.total || response.articles.length || 0;
+        if (res.data && res.data.code === 200) {
+            // 确保 data 存在
+            const responseData = res.data.data || {};
+            // 使用可选链和默认值
+            articles.value = responseData.articles || [];
+            total.value = responseData.total || 0;
+        } else {
+            throw new Error('获取文章列表失败');
+        }
     } catch (err) {
         error.value = err.message || '加载文章失败，请稍后重试';
         console.error('获取文章列表失败:', err);
+        articles.value = []; // 出错时清空文章列表
+        total.value = 0;    // 重置总数
     } finally {
         loading.value = false;
     }

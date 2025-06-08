@@ -1,19 +1,15 @@
 <template>
     <div class="comment-item">
         <div class="comment-header">
-            <img :src="comment.avatarUrl || defaultAvatar" :alt="comment.username" class="avatar" />
+            <img :src="avatarUrl" :alt="comment.username" class="avatar" />
             <div class="info">
                 <span class="username">{{ comment.username }}</span>
-                <span class="timestamp">{{ formatDate(comment.createTime) }}</span>
+                <span class="time">{{ formatTime(comment.createTime) }}</span>
             </div>
 
             <div class="actions">
                 <button class="action-btn" @click="toggleReplyForm">
                     <i class="fas fa-reply"></i> 回复
-                </button>
-                <button class="action-btn" @click="toggleLike">
-                    <i :class="isLiked ? 'fas fa-heart' : 'far fa-heart'"></i>
-                    {{ likeCount }}
                 </button>
             </div>
         </div>
@@ -28,9 +24,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import ReplyForm from './ReplyForm.vue';
 import { formatDate } from '@/utils/date';  // 确保路径正确
+import defaultAvatar from '@/assets/default-avatar.jpg';
+import { API_CONFIG } from '@/config';
 
 const props = defineProps({
     comment: {
@@ -50,21 +48,8 @@ const props = defineProps({
 const emit = defineEmits(['reply', 'like']);
 
 const showReplyForm = ref(false);
-const isLiked = ref(false);
 const likeCount = ref(props.comment.likeCount || 0);
-const defaultAvatar = 'https://i.pravatar.cc/100';
 
-onMounted(() => {
-    // 初始化点赞状态（实际应用中应从用户信息中获取）
-    isLiked.value = props.currentUser.id ?
-        (props.comment.likedBy || []).includes(props.currentUser.id) :
-        false;
-
-    // 如果评论有点赞计数，则使用它
-    if (props.comment.likeCount !== undefined) {
-        likeCount.value = props.comment.likeCount;
-    }
-});
 
 const toggleReplyForm = () => {
     showReplyForm.value = !showReplyForm.value;
@@ -77,37 +62,55 @@ const cancelReply = () => {
     showReplyForm.value = false;
 };
 
-const toggleLike = async () => {
-    if (!props.currentUser.id) {
-        // 实际应用中应该提示用户登录
-        alert('请先登录后再操作');
-        return;
-    }
-
-    try {
-        // 模拟调用API
-        // await likeComment(props.comment.id);
-
-        isLiked.value = !isLiked.value;
-
-        // 更新点赞计数
-        if (isLiked.value) {
-            likeCount.value += 1;
-        } else {
-            likeCount.value = Math.max(0, likeCount.value - 1);
-        }
-
-        // 通知父组件点赞状态已更新
-        emit('like', props.comment.id);
-    } catch (error) {
-        console.error('点赞失败:', error);
-    }
-};
-
 const onSubmitReply = (content) => {
     emit('reply', props.comment, content);
     showReplyForm.value = false;
 };
+
+// 时间格式化函数
+const formatTime = (timestamp) => {
+    if (!timestamp) return '';
+    
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now - date;
+    
+    // 小于1分钟
+    if (diff < 60000) {
+        return '刚刚';
+    }
+    // 小于1小时
+    if (diff < 3600000) {
+        return `${Math.floor(diff / 60000)}分钟前`;
+    }
+    // 小于24小时
+    if (diff < 86400000) {
+        return `${Math.floor(diff / 3600000)}小时前`;
+    }
+    // 小于30天
+    if (diff < 2592000000) {
+        return `${Math.floor(diff / 86400000)}天前`;
+    }
+    
+    // 超过30天显示具体日期
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+// 处理头像URL的计算属性
+const avatarUrl = computed(() => {
+    if (!props.comment.avatarUrl) {
+        return defaultAvatar;
+    }
+    // 如果已经是完整的URL（以http开头），直接返回
+    if (props.comment.avatarUrl.startsWith('http')) {
+        return props.comment.avatarUrl;
+    }
+    // 否则，拼接基础URL
+    return `${API_CONFIG.BASE_URL}${props.comment.avatarUrl}`;
+});
 </script>
 
 <style scoped>

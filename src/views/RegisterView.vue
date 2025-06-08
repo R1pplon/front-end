@@ -204,9 +204,10 @@ const handleSubmit = async () => {
 
         console.log('注册响应:', response);
 
-        // 处理成功响应
-        if (response.code == 200) {
-            successMessage.value = response.data || '注册成功';
+        // 处理响应
+        if (response.success && response.data) {
+            // 显示成功消息
+            successMessage.value = '注册成功，即将跳转到登录页面...';
 
             // 2秒后跳转到登录页面
             setTimeout(() => {
@@ -214,26 +215,21 @@ const handleSubmit = async () => {
             }, 2000);
         } else {
             // 处理API返回的错误
-            console.error('失败代码:', response.code);
-            console.error('注册失败:', response.message);
-            errorMessage.value = response.message || '注册失败，请重试111';
+            console.error('注册失败 - 错误代码:', response.code);
+            console.error('错误消息:', response.message);
 
             // 特殊处理用户名已存在的情况
             if (response.code === 1003) {
                 errors.username = '该用户名已被注册';
+            } else if (response.code === 1004) {
+                errors.email = '该邮箱已被注册';
             }
+
+            errorMessage.value = response.message || '注册失败，请重试';
         }
     } catch (error) {
         console.error('注册失败:', error);
-
-        // 处理错误消息
-        if (error.message) {
-            errorMessage.value = error.message;
-        } else if (error.response && error.response.data && error.response.data.message) {
-            errorMessage.value = error.response.data.message;
-        } else {
-            errorMessage.value = '网络连接失败，请稍后重试';
-        }
+        errorMessage.value = error.message || '网络连接失败，请稍后重试';
     } finally {
         isSubmitting.value = false;
     }

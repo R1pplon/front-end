@@ -4,39 +4,83 @@
         <div class="profile-content">
             <div class="profile-card">
                 <div class="profile-header">
-                    <img :src="user.avatar || '/default-avatar.jpg'" alt="用户头像" class="avatar" />
-                    <h2>{{ user.username }}</h2>
-                    <div class="user-role" v-if="user.role === 'admin'">
+                    <div class="avatar-container">
+                        <img :src="authStore.avatar" alt="用户头像" class="avatar" />
+                        <div class="avatar-upload">
+                            <label for="avatar-input" class="upload-btn">
+                                <i class="fas fa-camera"></i>
+                                更换头像
+                            </label>
+                            <input
+                                type="file"
+                                id="avatar-input"
+                                accept="image/*"
+                                @change="handleAvatarUpload"
+                                style="display: none"
+                            />
+                        </div>
+                    </div>
+                    <h2>{{ authStore.username }}</h2>
+                    <div class="user-role" v-if="authStore.role === 'admin'">
                         <span class="badge admin">管理员</span>
                     </div>
                 </div>
 
-                <div class="profile-info">
+                <div class="profile-info" v-if="!isEditing">
                     <div class="info-item">
                         <span class="label">邮箱:</span>
-                        <span class="value">{{ user.email || '未设置' }}</span>
+                        <span class="value">{{ authStore.email || '未设置' }}</span>
                     </div>
 
                     <div class="info-item">
                         <span class="label">注册日期:</span>
-                        <span class="value">{{ formatDate(user.createdAt) }}</span>
+                        <span class="value">{{ formatDate(authStore.createdAt) }}</span>
                     </div>
 
                     <div class="info-item">
                         <span class="label">个人简介:</span>
-                        <p class="bio">{{ user.bio || '这个人很懒，什么都没留下...' }}</p>
+                        <p class="bio">{{ authStore.bio || '这个人很懒，什么都没留下...' }}</p>
+                    </div>
+                </div>
+
+                <div class="profile-edit" v-else>
+                    <div class="info-item">
+                        <span class="label">用户名:</span>
+                        <input v-model="editForm.username" type="text" class="edit-input" />
+                    </div>
+
+                    <div class="info-item">
+                        <span class="label">新密码:</span>
+                        <input v-model="editForm.password" type="password" class="edit-input" placeholder="留空表示不修改" />
                     </div>
                 </div>
 
                 <div class="profile-actions">
-                    <button @click="editProfile" class="edit-btn">编辑资料</button>
+                    <template v-if="!isEditing">
+                        <button @click="startEdit" class="edit-btn">编辑资料</button>
+                    </template>
+                    <template v-else>
+                        <button @click="cancelEdit" class="cancel-btn">取消</button>
+                        <button @click="saveProfile" class="save-btn">保存</button>
+                    </template>
                 </div>
             </div>
 
-            <div class="stats-section">
-                <div class="stats-card">
-                    <span class="stat-label">评论总数</span>
-                    <span class="stat-value">{{ user.stats?.comments || 0 }}</span>
+
+            <!-- 评论列表部分 -->
+            <div class="comments-section">
+                <h2>我的评论</h2>
+                <div class="comments-list" v-if="comments.length > 0">
+                    <div v-for="comment in comments" :key="comment.id" class="comment-card">
+                        <div class="comment-header">
+                            <span class="article-title">{{ comment.articleTitle }}</span>
+                            <span class="comment-time">{{ formatDateSimple(comment.createTime) }}</span>
+                        </div>
+                        <div class="comment-content">{{ truncateText(comment.content, 10) }}</div>
+                    </div>
+                </div>
+                <div v-else class="no-comments">
+                    暂无评论
                 </div>
             </div>
         </div>
@@ -45,22 +89,36 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { getToken } from '@/utils/auth';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
+import request from '@/utils/request';
+import { ElMessage } from 'element-plus';
 
 const router = useRouter();
-const user = ref({
-    id: 1,
-    username: '加载中...',
-    email: 'user@example.com',
-    avatar: null,
-    bio: '',
-    createdAt: new Date().toISOString(),
-    role: 'user',
-    stats: {
-        comments: 42
-    }
+const authStore = useAuthStore();
+const comments = ref([]); // 用户评论列表
+
+const isEditing = ref(false);
+const editForm = ref({
+    username: '',
+    password: ''
 });
+
+// 获取用户评论列表
+const fetchUserComments = async () => {
+    try {
+        const response = await request.get('/comment/');
+        if (response.data.code === 200) {
+            // 只获取当前用户的评论
+            comments.value = response.data.data.filter(
+                comment => comment.username === authStore.username
+            );
+        }
+    } catch (error) {
+        console.error('获取评论列表失败:', error);
+        ElMessage.error('获取评论列表失败');
+    }
+};
 
 // 格式化日期显示
 const formatDate = (dateString) => {
@@ -69,51 +127,122 @@ const formatDate = (dateString) => {
     return date.toLocaleDateString('zh-CN', {
         year: 'numeric',
         month: 'long',
-        day: 'numeric'
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
     });
 };
 
-// 获取用户信息
-const fetchUserProfile = async () => {
-    // 这里调用API获取用户信息
-    // 模拟API调用
-    return new Promise(resolve => {
-        setTimeout(() => {
-            resolve({
-                id: 1,
-                username: '张三',
-                email: 'zhangsan@example.com',
-                avatar: null,
-                bio: '热爱编程的前端工程师，专注于Vue和React开发',
-                createdAt: '2023-01-15T10:30:00.000Z',
-                role: 'user',
-                stats: {
-                    comments: 42,
-                }
-            });
-        }, 800);
-    });
+// 简化的日期格式化方法
+const formatDateSimple = (dateString) => {
+    if (!dateString) return '未知日期';
+    const date = new Date(dateString);
+    return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
 };
 
-// 编辑资料
-const editProfile = () => {
-    router.push('/settings');
+// 文本截断方法
+const truncateText = (text, maxLength) => {
+    if (!text) return '';
+    return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
+};
+
+// 开始编辑
+const startEdit = () => {
+    isEditing.value = true;
+    editForm.value.username = authStore.username;
+};
+
+// 取消编辑
+const cancelEdit = () => {
+    isEditing.value = false;
+    editForm.value.username = authStore.username;
+    editForm.value.password = '';
+};
+
+// 保存资料
+const saveProfile = async () => {
+    try {
+        const updateData = {
+            username: editForm.value.username
+        };
+        
+        if (editForm.value.password) {
+            updateData.password = editForm.value.password;
+        }
+
+        const response = await request.put('/api/user/info', updateData);
+        if (response.data.code === 200) {
+            // 更新全局状态
+            authStore.updateUser(response.data.data);
+            isEditing.value = false;
+            editForm.value.password = '';
+            ElMessage.success('保存成功');
+        }
+    } catch (error) {
+        ElMessage.error('保存失败');
+        console.error('保存失败:', error);
+    }
+};
+
+// 上传头像
+const handleAvatarUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // 验证文件类型
+    if (!file.type.startsWith('image/')) {
+        ElMessage.error('请上传图片文件');
+        console.log('请上传图片文件');
+        return;
+    }
+
+    // 验证文件大小（限制为 20MB）
+    const MAX_SIZE = 20 * 1024 * 1024; // 20MB in bytes
+    if (file.size > MAX_SIZE) {
+        ElMessage.error(`图片大小不能超过 20MB，当前文件大小: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+        console.log('文件过大:', file.size, '字节');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        console.log('正在上传文件:', file.name, '大小:', (file.size / 1024).toFixed(2), 'KB');
+        const response = await request.post('/user/upload', formData);
+        console.log('response is ', response);
+
+        if (response.data.code === 200) {
+            // 更新用户头像
+            const avatarUrl = response.data.data; // 后端返回的是图片URL
+            // 更新全局状态中的头像URL
+            authStore.updateAvatar(avatarUrl);
+            ElMessage.success('头像上传成功');
+        }
+    } catch (error) {
+        if (error.response) {
+            if (error.response.status === 413) {
+                ElMessage.error('文件太大，服务器拒绝接收');
+            } else {
+                ElMessage.error(error.response.data.message || '头像上传失败');
+            }
+        } else if (error.code === 'ERR_NETWORK') {
+            ElMessage.error('网络错误，请检查网络连接');
+        } else {
+            ElMessage.error('头像上传失败');
+        }
+        console.error('头像上传失败:', error);
+    }
 };
 
 onMounted(async () => {
     // 检查token
-    const token = getToken();
-    if (!token) {
+    if (!authStore.isLoggedIn) {
         router.push('/login');
         return;
     }
-
-    try {
-        const userData = await fetchUserProfile();
-        user.value = userData;
-    } catch (error) {
-        console.error('获取用户信息失败:', error);
-    }
+    // 获取用户评论
+    await fetchUserComments();
 });
 </script>
 
@@ -161,14 +290,42 @@ onMounted(async () => {
     margin-bottom: 2rem;
 }
 
+.avatar-container {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
 .avatar {
     width: 120px;
     height: 120px;
     border-radius: 50%;
     object-fit: cover;
-    margin-bottom: 1rem;
-    background-color: #f0f0f0;
     border: 2px solid #ddd;
+}
+
+.avatar-upload {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.avatar-container:hover .avatar-upload {
+    opacity: 1;
+}
+
+.upload-btn {
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 h2 {
@@ -222,24 +379,53 @@ h2 {
     border-radius: 6px;
 }
 
+.profile-edit {
+    margin-bottom: 2rem;
+}
+
+.edit-input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
 .profile-actions {
     display: flex;
     justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
 }
 
-.edit-btn {
-    padding: 0.75rem 1.5rem;
-    background-color: var(--text-link);
+.edit-btn, .save-btn {
+    padding: 0.75rem 2rem;
+    background-color: #409eff;
     color: white;
     border: none;
     border-radius: 4px;
-    font-weight: 500;
     cursor: pointer;
+    font-weight: 500;
     transition: background-color 0.3s;
 }
 
-.edit-btn:hover {
-    background-color: var(--text-link-hover);
+.cancel-btn {
+    padding: 0.75rem 2rem;
+    background-color: #909399;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.3s;
+}
+
+.edit-btn:hover, .save-btn:hover {
+    background-color: #66b1ff;
+}
+
+.cancel-btn:hover {
+    background-color: #a6a9ad;
 }
 
 .stat-label {
@@ -255,10 +441,81 @@ h2 {
     color: var(--text-primary);
 }
 
+/* 评论列表样式 */
+.comments-section {
+    flex: 1;
+    min-width: 300px;
+    background-color: var(--bg-card);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: var(--shadow);
+}
+
+.comments-section h2 {
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+}
+
+.comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.comment-card {
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1rem;
+    transition: transform 0.2s;
+}
+
+.comment-card:hover {
+    transform: translateY(-2px);
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.article-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.comment-time {
+    color: #999;
+    font-size: 0.9rem;
+}
+
+.comment-content {
+    color: var(--text-primary);
+    line-height: 1.5;
+    margin-top: 0.5rem;
+    word-break: break-word;
+    font-size: 1rem;
+}
+
+.no-comments {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 2rem;
+    font-size: 1.1rem;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
     .profile-content {
         flex-direction: column;
+    }
+
+    .comments-section {
+        margin-top: 2rem;
     }
 }
 </style>
