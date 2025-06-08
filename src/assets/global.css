@@ -61,6 +61,17 @@
     color: var(--text-link-hover);
   }
   
+  /* 文本选择样式 */
+  ::selection {
+    background-color: #39C5BB;
+    color: white;
+  }
+  
+  ::-moz-selection {
+    background-color: #39C5BB;
+    color: white;
+  }
+  
   /* 布局相关颜色应用 */
   .main-nav {
     background-color: var(--bg-secondary);
