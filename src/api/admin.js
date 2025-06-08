@@ -7,6 +7,21 @@ export const adminArticleAPI = {
     return request.post("/admin/articles", data);
   },
 
+  // 通过文件上传创建文章
+  uploadArticle: (formData, userId = null) => {
+    const config = {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    };
+
+    const url = userId
+      ? `/admin/articles/upload?userId=${userId}`
+      : "/admin/articles/upload";
+
+    return request.post(url, formData, config);
+  },
+
   // 更新文章
   updateArticle: (articleId, data) => {
     return request.put(`/admin/article/${articleId}`, data);

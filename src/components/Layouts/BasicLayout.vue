@@ -4,9 +4,30 @@
             <nav class="main-nav">
                 <router-link to="/" class="logo">我的博客</router-link>
                 <div class="nav-links">
-                    <router-link to="/">首页</router-link>
-                    <router-link to="/articles">文章</router-link>
-                    <router-link to="/about">关于我</router-link>
+                    <router-link 
+                        to="/" 
+                        :class="{ 'router-link-active': isHomeActive }"
+                        active-class=""
+                        exact-active-class=""
+                    >
+                        首页
+                    </router-link>
+                    <router-link 
+                        to="/articles" 
+                        :class="{ 'router-link-active': isArticleActive }"
+                        active-class=""
+                        exact-active-class=""
+                    >
+                        文章
+                    </router-link>
+                    <router-link 
+                        to="/about" 
+                        :class="{ 'router-link-active': isAboutActive }"
+                        active-class=""
+                        exact-active-class=""
+                    >
+                        关于我
+                    </router-link>
                 </div>
                 <div class="user-actions">
                     <button class="theme-toggle" @click="toggleTheme" :aria-label="isDarkTheme ? '切换为亮色主题' : '切换为暗色主题'">
@@ -51,7 +72,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/auth';
 import { logout as authLogout } from '@/utils/auth';
@@ -59,6 +80,7 @@ import { logout as authLogout } from '@/utils/auth';
 import defaultAvatar from '@/assets/default-avatar.jpg';
 
 const router = useRouter();
+const route = useRoute();
 
 // 使用全局认证状态
 const authStore = useAuthStore();
@@ -118,6 +140,22 @@ const toggleTheme = () => {
 // 根据主题返回对应的图标
 const themeIcon = computed(() => {
     return isDarkTheme.value ? '🌙' : '☀️';
+});
+
+// 判断首页是否激活（仅根路径）
+const isHomeActive = computed(() => {
+    return route.path === '/';
+});
+
+// 判断文章页面是否激活（包括文章列表和文章详情）
+const isArticleActive = computed(() => {
+    const path = route.path;
+    return path === '/articles' || path.startsWith('/article/');
+});
+
+// 判断关于页面是否激活
+const isAboutActive = computed(() => {
+    return route.path === '/about';
 });
 
 // 管理员链接显示状态
@@ -213,7 +251,8 @@ header {
     color: var(--text-link);
 }
 
-.nav-links a.router-link-active {
+.nav-links a.router-link-active,
+.nav-links a.router-link-exact-active {
     color: var(--text-link);
     font-weight: 500;
 }

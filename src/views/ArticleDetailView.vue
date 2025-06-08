@@ -90,7 +90,7 @@
 import { ref, reactive, computed, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getArticleById } from '@/api/article';
-import { renderMarkdown } from '@/utils/markdown';
+import { renderMarkdown, applyCodeHighlight } from '@/utils/markdown';
 import CommentTree from '@/components/comments/CommentTree.vue';
 import { getArticleComments, addComment, deleteComment } from '@/api/article';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -120,7 +120,20 @@ const authorAvatar = 'https://i.pravatar.cc/100'; // 作者头像占位图
 
 // 计算属性
 const renderedContent = computed(() => {
-    return renderMarkdown(article.value?.content);
+    if (!article.value || !article.value.content) {
+        return '';
+    }
+    
+    console.log('准备渲染的文章内容:', article.value.content);
+    const rendered = renderMarkdown(article.value.content);
+    console.log('渲染后的HTML:', rendered);
+    
+    // 在下一个 tick 中应用代码高亮
+    nextTick(() => {
+        applyCodeHighlight();
+    });
+    
+    return rendered;
 });
 
 const commentCount = computed(() => comments.value.length);
@@ -780,16 +793,45 @@ onMounted(async () => {
 }
 
 .article-content pre {
-    background-color: var(--bg-secondary);
+    background-color: #f6f8fa;
     padding: 1.2rem;
     border-radius: 8px;
     overflow-x: auto;
     margin: 1.5rem 0;
+    border: 1px solid #e1e4e8;
+    position: relative;
+}
+
+.article-content pre code {
+    font-family: 'Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    background: none;
+    padding: 0;
+    border: none;
+    border-radius: 0;
 }
 
 .article-content code {
-    font-family: 'Fira Code', monospace;
-    font-size: 0.95rem;
+    font-family: 'Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+    font-size: 0.9rem;
+    background-color: rgba(175, 184, 193, 0.2);
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    border: 1px solid rgba(175, 184, 193, 0.3);
+}
+
+/* 暗色主题下的代码块样式 */
+@media (prefers-color-scheme: dark) {
+    .article-content pre {
+        background-color: #161b22;
+        border-color: #30363d;
+    }
+    
+    .article-content code {
+        background-color: rgba(110, 118, 129, 0.4);
+        border-color: rgba(110, 118, 129, 0.5);
+    }
 }
 
 .article-content blockquote {

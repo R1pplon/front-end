@@ -20,6 +20,24 @@
         <p>管理所有文章内容</p>
       </div>
       <div class="header-right">
+        <el-tooltip 
+          content="支持上传 .txt 和 .md 格式的文本文件" 
+          placement="bottom"
+        >
+          <el-upload
+            ref="uploadRef"
+            action=""
+            :auto-upload="false"
+            :show-file-list="false"
+            accept=".txt,.md"
+            :on-change="handleFileChange"
+            :before-upload="beforeUpload"
+          >
+            <el-button type="success" :icon="Upload" :loading="uploading">
+              上传文章
+            </el-button>
+          </el-upload>
+        </el-tooltip>
         <el-button type="primary" @click="showCreateDialog">
           <el-icon><Plus /></el-icon>
           新建文章
@@ -120,7 +138,7 @@
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Document, Plus, ArrowLeft } from '@element-plus/icons-vue'
+import { Document, Plus, ArrowLeft, Upload } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { adminArticleAPI } from '@/api/admin'
 import { getArticles, getArticleById } from '@/api/article'
@@ -130,10 +148,12 @@ const router = useRouter()
 // 数据状态
 const loading = ref(false)
 const submitting = ref(false)
+const uploading = ref(false)
 const articleList = ref([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const currentArticleId = ref(null)
+const uploadRef = ref()
 
 // 表单相关
 const articleFormRef = ref()
@@ -285,6 +305,84 @@ const submitArticle = async () => {
   }
 }
 
+// 文件上传前的验证
+const beforeUpload = (file) => {
+  const isTextFile = file.type === 'text/plain' || 
+                     file.type === 'text/markdown' || 
+                     file.name.endsWith('.txt') || 
+                     file.name.endsWith('.md')
+  
+  if (!isTextFile) {
+    ElMessage.error('只能上传 .txt 或 .md 格式的文本文件！')
+    return false
+  }
+
+  const isLt10M = file.size / 1024 / 1024 < 10
+  if (!isLt10M) {
+    ElMessage.error('文件大小不能超过 10MB！')
+    return false
+  }
+
+  return true
+}
+
+// 处理文件选择
+const handleFileChange = async (file) => {
+  if (!file.raw) return
+  
+  // 验证文件
+  if (!beforeUpload(file.raw)) {
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确定要上传文件 "${file.name}" 创建文章吗？`,
+      '确认上传',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info',
+      }
+    )
+
+    await uploadFile(file.raw)
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('上传确认失败:', error)
+    }
+  }
+}
+
+// 上传文件
+const uploadFile = async (file) => {
+  uploading.value = true
+  
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await adminArticleAPI.uploadArticle(formData)
+    
+    if (response.data && response.data.code === 200) {
+      ElMessage.success('文章上传成功！')
+      // 重新获取文章列表
+      await fetchArticles()
+      // 清空上传组件
+      if (uploadRef.value) {
+        uploadRef.value.clearFiles()
+      }
+    } else {
+      ElMessage.error(response.data?.message || '上传失败')
+    }
+  } catch (error) {
+    console.error('上传文章失败:', error)
+    ElMessage.error('上传失败：' + (error.response?.data?.message || error.message))
+  } finally {
+    uploading.value = false
+  }
+}
+
 // 返回管理后台
 const goBack = () => {
   router.push('/admin')
@@ -326,6 +424,12 @@ onMounted(() => {
 .header-left p {
   color: #718096;
   margin: 0;
+}
+
+.header-right {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
 }
 
 .articles-list {
@@ -393,6 +497,8 @@ onMounted(() => {
   
   .header-right {
     align-self: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
   }
   
   :deep(.el-dialog) {

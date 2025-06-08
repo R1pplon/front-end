@@ -1,67 +1,96 @@
 import { marked } from "marked";
 import DOMPurify from "dompurify";
+import hljs from "highlight.js";
 
-// 创建 Markdown 渲染器
-const renderer = new marked.Renderer();
-
-// 覆盖默认渲染方法
-renderer.heading = (text, level) => {
-  return `<h${level} class="markdown-heading">${text}</h${level}>`;
-};
-
-// 修复链接渲染问题
-renderer.link = (href, title, text) => {
-  // 处理 href 不是字符串的情况
-  if (typeof href !== "string") {
-    return text;
-  }
-
-  const isExternal = href.startsWith("http");
-  const target = isExternal ? 'target="_blank" rel="noopener noreferrer"' : "";
-  return `<a href="${href}" ${target} title="${title || ""}">${text}</a>`;
-};
-
-// 配置 marked
+// 配置 marked 支持代码高亮
 marked.setOptions({
-  renderer,
   breaks: true,
   gfm: true,
   smartLists: true,
   smartypants: true,
+  highlight: function (code, language) {
+    // 如果指定了语言且该语言被支持，则使用指定语言高亮
+    if (language && hljs.getLanguage(language)) {
+      try {
+        return hljs.highlight(code, { language: language }).value;
+      } catch (err) {
+        console.warn("代码高亮失败:", err);
+      }
+    }
+
+    // 否则尝试自动检测语言
+    try {
+      return hljs.highlightAuto(code).value;
+    } catch (err) {
+      console.warn("自动代码高亮失败:", err);
+      return code; // 如果高亮失败，返回原始代码
+    }
+  },
 });
 
 // 渲染 Markdown 并净化 HTML
 export const renderMarkdown = (markdown) => {
-  if (!markdown) return "";
+  if (!markdown || typeof markdown !== "string") {
+    console.warn("renderMarkdown: 输入不是有效的字符串", markdown);
+    return "";
+  }
 
-  // 渲染 Markdown 到 HTML
-  const rawHtml = marked.parse(markdown);
+  try {
+    // 渲染 Markdown 到 HTML
+    const rawHtml = marked.parse(markdown);
 
-  // 净化 HTML 防止 XSS 攻击
-  const cleanHtml = DOMPurify.sanitize(rawHtml, {
-    ALLOWED_TAGS: [
-      "p",
-      "h1",
-      "h2",
-      "h3",
-      "h4",
-      "h5",
-      "h6",
-      "ul",
-      "ol",
-      "li",
-      "strong",
-      "em",
-      "pre",
-      "code",
-      "blockquote",
-      "a",
-      "img",
-      "div",
-      "span",
-    ],
-    ADD_ATTR: ["target", "rel"],
-  });
+    // 确保 rawHtml 是字符串
+    const htmlString = typeof rawHtml === "string" ? rawHtml : String(rawHtml);
 
-  return cleanHtml;
+    // 净化 HTML 防止 XSS 攻击
+    const cleanHtml = DOMPurify.sanitize(htmlString, {
+      ALLOWED_TAGS: [
+        "p",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "ul",
+        "ol",
+        "li",
+        "strong",
+        "em",
+        "pre",
+        "code",
+        "blockquote",
+        "a",
+        "img",
+        "div",
+        "span",
+        "br",
+      ],
+      ALLOWED_ATTR: [
+        "href",
+        "target",
+        "rel",
+        "class",
+        "title",
+        "style",
+        "data-lang",
+      ],
+      ADD_ATTR: ["target", "rel"],
+    });
+
+    return cleanHtml;
+  } catch (error) {
+    console.error("Markdown 渲染错误:", error);
+    return `<p>内容渲染失败</p>`;
+  }
+};
+
+// 如果需要手动应用代码高亮（通常不需要，因为 marked 已经处理了）
+export const applyCodeHighlight = () => {
+  try {
+    hljs.highlightAll();
+    console.log("代码高亮应用完成");
+  } catch (error) {
+    console.warn("代码高亮失败:", error);
+  }
 };

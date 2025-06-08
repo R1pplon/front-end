@@ -6,6 +6,9 @@ import App from "./App.vue";
 import router from "./router";
 import "./assets/global.css";
 
+// 引入 highlight.js 样式
+import "highlight.js/styles/github.css";
+
 const app = createApp(App);
 const pinia = createPinia();
 
