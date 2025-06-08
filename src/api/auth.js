@@ -37,12 +37,14 @@ export const registerUser = async (data) => {
       data,
     });
 
-    // response 已经是 response.data 了
+    // 处理axios响应结构
+    const apiData = response.data;
+
     return {
       success: true,
-      code: response.code,
-      message: response.message || "注册成功",
-      data: response.data,
+      code: apiData.code,
+      message: apiData.message || "注册成功",
+      data: apiData.data,
     };
   } catch (error) {
     console.error("注册请求失败:", error);
@@ -102,12 +104,14 @@ export const loginUser = async (data) => {
       data,
     });
 
-    // response 已经是 response.data 了
+    // 处理axios响应结构
+    const apiData = response.data;
+
     return {
       success: true,
-      code: response.code,
-      message: response.message || "登录成功",
-      data: response.data,
+      code: apiData.code,
+      message: apiData.message || "登录成功",
+      data: apiData.data,
     };
   } catch (error) {
     console.error("登录请求失败:", error);
@@ -163,21 +167,74 @@ export const getCurrentUser = async () => {
       method: "get",
     });
 
-    if (!response || typeof response !== "object") {
+    if (!response || !response.data || typeof response.data !== "object") {
       throw new Error("用户信息请求返回了无效的响应格式");
     }
 
+    const apiData = response.data;
+
     return {
-      success: response.code === ErrorCodes.SUCCESS,
-      code: response.code || ErrorCodes.INTERNAL_SERVER_ERROR,
-      message: response.message || "未知错误",
-      data: response.data || null,
+      success: apiData.code === ErrorCodes.SUCCESS || apiData.code === 200,
+      code: apiData.code || ErrorCodes.INTERNAL_SERVER_ERROR,
+      message: apiData.message || "未知错误",
+      data: apiData.data || null,
     };
   } catch (error) {
     console.error("获取用户信息失败:", error);
 
     let errorCode = ErrorCodes.INTERNAL_SERVER_ERROR;
     let errorMessage = "获取用户信息失败";
+
+    if (error.response) {
+      errorCode = error.response.status || errorCode;
+      errorMessage = error.response.data?.message || errorMessage;
+    }
+
+    return {
+      success: false,
+      code: errorCode,
+      message: errorMessage,
+      data: null,
+    };
+  }
+};
+
+/**
+ * 获取当前用户角色信息
+ * @returns {Promise<Object>} API响应
+ */
+export const getUserRole = async () => {
+  try {
+    const response = await request({
+      url: "/user/getRole",
+      method: "get",
+    });
+
+    if (!response || !response.data || typeof response.data !== "object") {
+      throw new Error("用户角色请求返回了无效的响应格式");
+    }
+
+    // 正确处理axios响应结构：response.data 是实际的API数据
+    const apiData = response.data;
+    const isSuccess =
+      apiData.code === ErrorCodes.SUCCESS || apiData.code === 200;
+
+    console.log("🔍 角色API处理:", {
+      success: isSuccess,
+      role: apiData.data?.role,
+    });
+
+    return {
+      success: isSuccess,
+      code: apiData.code || ErrorCodes.INTERNAL_SERVER_ERROR,
+      message: apiData.message || "未知错误",
+      data: apiData.data || null, // 这里是实际的数据，包含 role 字段
+    };
+  } catch (error) {
+    console.error("获取用户角色失败:", error);
+
+    let errorCode = ErrorCodes.INTERNAL_SERVER_ERROR;
+    let errorMessage = "获取用户角色失败";
 
     if (error.response) {
       errorCode = error.response.status || errorCode;

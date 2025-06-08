@@ -67,12 +67,13 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { loginUser } from '@/api/auth';
 import { setToken, setUserInfo } from '@/utils/auth';
 import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore(); // 添加使用authStore
 
 // 表单数据
@@ -164,8 +165,11 @@ const handleSubmit = async () => {
             // 存储用户信息
             setUserInfo(userData);
 
-            // 更新全局认证状态（token已通过cookie设置）
+            // 更新全局认证状态
             authStore.login(null, userData);
+
+            // 刷新用户角色信息
+            await authStore.refreshUserRole();
 
             // 处理记住我选项
             if (rememberMe.value) {
@@ -177,10 +181,11 @@ const handleSubmit = async () => {
             // 添加登录成功消息
             successMessage.value = '登录成功，正在跳转...';
 
-            // 添加短暂延迟再跳转
+            // 短暂延迟后跳转
             setTimeout(() => {
-                router.push('/');
-            }, 1500);
+                const redirect = route.query.redirect || '/';
+                router.push(redirect);
+            }, 1000);
         } else {
             // 处理API返回的错误
             console.error('登录失败 - 错误代码:', response.code);

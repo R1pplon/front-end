@@ -40,19 +40,22 @@
         </main>
 
         <footer>
-            <p>© 2023 我的个人博客 |
-                <router-link to="/admin">管理员入口</router-link>
+            <p>© 2023 我的个人博客
+                <template v-if="showAdminLink">
+                    | <router-link to="/admin">管理员入口</router-link>
+                </template>
             </p>
         </footer>
     </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/auth';
 import { logout as authLogout } from '@/utils/auth';
+
 import defaultAvatar from '@/assets/default-avatar.jpg';
 
 const router = useRouter();
@@ -117,8 +120,30 @@ const themeIcon = computed(() => {
     return isDarkTheme.value ? '🌙' : '☀️';
 });
 
+// 管理员链接显示状态
+const showAdminLink = ref(false);
+
+// 检查管理员权限
+const checkAdminPermission = async () => {
+    if (authStore.isLoggedIn) {
+        try {
+            showAdminLink.value = await authStore.checkIsAdmin();
+        } catch (error) {
+            console.error('检查管理员权限失败:', error);
+            showAdminLink.value = false;
+        }
+    } else {
+        showAdminLink.value = false;
+    }
+};
+
+// 监听登录状态变化
+watch(() => authStore.isLoggedIn, () => {
+    checkAdminPermission();
+}, { immediate: true });
+
 // 初始化时检测保存的主题偏好
-onMounted(() => {
+onMounted(async () => {
     // 从本地存储读取
     const savedTheme = localStorage.getItem('theme');
     // 检测系统偏好
@@ -130,7 +155,10 @@ onMounted(() => {
     }
     
     // 初始化认证状态
-    authStore.init();
+    await authStore.init();
+    
+    // 检查管理员权限
+    await checkAdminPermission();
 });
 </script>
 

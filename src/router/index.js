@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import BasicLayout from "@/components/Layouts/BasicLayout.vue";
 import { useAuthStore } from "@/stores/auth";
+import { isAdmin } from "@/utils/permission";
 
 const routes = [
   {
@@ -64,6 +65,56 @@ const routes = [
           requiresAuth: true,
           requiresAdmin: true, // 需要管理员权限
         },
+        children: [
+          {
+            path: "articles",
+            name: "AdminArticles",
+            component: () => import("@/views/admin/AdminArticlesView.vue"),
+            meta: {
+              title: "文章管理",
+              requiresAuth: true,
+              requiresAdmin: true,
+            },
+          },
+          {
+            path: "users",
+            name: "AdminUsers",
+            component: () => import("@/views/admin/AdminUsersView.vue"),
+            meta: {
+              title: "用户管理",
+              requiresAuth: true,
+              requiresAdmin: true,
+            },
+          },
+          {
+            path: "comments",
+            name: "AdminComments",
+            component: () => import("@/views/admin/AdminCommentsView.vue"),
+            meta: {
+              title: "评论管理",
+              requiresAuth: true,
+              requiresAdmin: true,
+            },
+          },
+        ],
+      },
+      {
+        path: "/unauthorized",
+        name: "Unauthorized",
+        component: () => import("@/views/UnauthorizedView.vue"),
+        meta: { title: "权限不足" },
+      },
+      {
+        path: "/debug-token",
+        name: "TokenDebug",
+        component: () => import("@/views/TokenDebugView.vue"),
+        meta: { title: "Token 调试" },
+      },
+      {
+        path: "/test-role",
+        name: "RoleTest",
+        component: () => import("@/views/RoleTestView.vue"),
+        meta: { title: "角色测试" },
       },
       // 404 处理路由
       {
@@ -90,13 +141,19 @@ const router = createRouter({
 });
 
 // 全局前置守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   // 设置页面标题
   if (to.meta.title) {
     document.title = `${to.meta.title} - 我的博客`;
   }
 
   const authStore = useAuthStore();
+
+  console.log("路由守卫检查:", {
+    fromPath: from.path,
+    toPath: to.path,
+    isLoggedIn: authStore.isLoggedIn,
+  });
 
   // 检查是否仅限访客访问（如登录/注册页面）
   if (to.matched.some((record) => record.meta.guest)) {
@@ -110,6 +167,7 @@ router.beforeEach((to, from, next) => {
   // 检查是否需要认证
   if (to.matched.some((record) => record.meta.requiresAuth)) {
     if (!authStore.isLoggedIn) {
+      console.log("用户未登录，重定向到登录页");
       // 未登录用户重定向到登录页，携带原访问路径
       next({
         path: "/login",
@@ -120,12 +178,17 @@ router.beforeEach((to, from, next) => {
 
     // 检查管理员权限
     if (to.matched.some((record) => record.meta.requiresAdmin)) {
-      const userInfo = authStore.user;
-      const isAdmin = userInfo?.role === 0; // 假设role为0表示管理员
-
-      if (!isAdmin) {
-        // 非管理员用户重定向到首页或权限不足页面
-        next("/");
+      try {
+        const isAdminResult = await isAdmin();
+        if (!isAdminResult) {
+          console.log("管理员权限检查失败，重定向到权限不足页面");
+          // 非管理员用户重定向到权限不足页面
+          next("/unauthorized");
+          return;
+        }
+      } catch (error) {
+        console.error("权限检查时发生错误:", error);
+        next("/unauthorized");
         return;
       }
     }
