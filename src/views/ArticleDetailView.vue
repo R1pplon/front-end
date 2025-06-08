@@ -98,6 +98,7 @@ import { getArticleComments, addComment, deleteComment } from '@/api/article';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useAuthStore } from '@/stores/auth';
 import request from '@/utils/request';
+import hljs from 'highlight.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -359,6 +360,9 @@ const fetchArticle = async () => {
 // 合并两个 onMounted 钩子
 onMounted(async () => {
     try {
+        // 暴露 hljs 到全局 window 对象，供主题切换使用
+        window.hljs = hljs;
+        
         // 1. 获取文章详情
         await fetchArticle();
 
@@ -824,16 +828,14 @@ onMounted(async () => {
 }
 
 /* 暗色主题下的代码块样式 */
-@media (prefers-color-scheme: dark) {
-    .article-content pre {
-        background-color: #161b22;
-        border-color: #30363d;
-    }
-    
-    .article-content code {
-        background-color: rgba(110, 118, 129, 0.4);
-        border-color: rgba(110, 118, 129, 0.5);
-    }
+[data-theme="dark"] .article-content pre {
+    background-color: #161b22;
+    border-color: #30363d;
+}
+
+[data-theme="dark"] .article-content code {
+    background-color: rgba(18, 19, 21, 0.4);
+    border-color: rgba(34, 37, 40, 0.5);
 }
 
 .article-content blockquote {

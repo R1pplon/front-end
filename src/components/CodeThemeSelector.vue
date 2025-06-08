@@ -11,7 +11,10 @@
       <template #dropdown>
         <el-dropdown-menu>
           <div class="theme-category">
-            <div class="category-title">亮色主题</div>
+            <div class="category-title">
+              亮色主题
+              <span v-if="!isGlobalDarkTheme" class="recommended-label">（推荐）</span>
+            </div>
             <el-dropdown-item 
               v-for="theme in lightThemes" 
               :key="theme"
@@ -26,7 +29,10 @@
           <el-divider />
           
           <div class="theme-category">
-            <div class="category-title">暗色主题</div>
+            <div class="category-title">
+              暗色主题
+              <span v-if="isGlobalDarkTheme" class="recommended-label">（推荐）</span>
+            </div>
             <el-dropdown-item 
               v-for="theme in darkThemes" 
               :key="theme"
@@ -44,7 +50,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { ArrowDown } from '@element-plus/icons-vue';
 import { codeThemeManager } from '@/utils/codeTheme';
 
@@ -52,6 +58,21 @@ const currentTheme = ref('github');
 
 const lightThemes = ['github', 'vs', 'stackoverflow-light', 'googlecode', 'xcode'];
 const darkThemes = ['github-dark', 'vs2015', 'atom-one-dark', 'monokai', 'dracula', 'night-owl'];
+
+// 检测当前是否为暗色主题
+const isGlobalDarkTheme = computed(() => {
+  return document.documentElement.getAttribute('data-theme') === 'dark';
+});
+
+// 监听全局主题变化
+const observer = new MutationObserver((mutations) => {
+  mutations.forEach((mutation) => {
+    if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
+      // 当全局主题改变时，不自动切换代码主题，因为BasicLayout已经处理了
+      // 这里只是为了更新UI显示
+    }
+  });
+});
 
 const themeNames = {
   'github': 'GitHub',
@@ -88,6 +109,17 @@ onMounted(() => {
   currentTheme.value = codeThemeManager.getCurrentTheme();
   // 初始化主题
   codeThemeManager.init();
+  
+  // 监听 data-theme 属性变化
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme']
+  });
+});
+
+onUnmounted(() => {
+  // 清理监听器
+  observer.disconnect();
 });
 </script>
 
@@ -130,6 +162,15 @@ onMounted(() => {
   font-weight: 500;
   padding: 0.5rem 1rem;
   margin-bottom: 0.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.recommended-label {
+  color: var(--text-link);
+  font-size: 0.7rem;
+  font-weight: 400;
 }
 
 .theme-name {

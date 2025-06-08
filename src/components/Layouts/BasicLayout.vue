@@ -76,6 +76,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/auth';
 import { logout as authLogout } from '@/utils/auth';
+import { codeThemeManager } from '@/utils/codeTheme';
 
 import defaultAvatar from '@/assets/default-avatar.jpg';
 
@@ -135,6 +136,17 @@ const toggleTheme = () => {
     );
     // 保存到本地存储
     localStorage.setItem('theme', isDarkTheme.value ? 'dark' : 'light');
+    
+    // 根据主题自动切换代码高亮主题
+    const defaultCodeTheme = isDarkTheme.value ? 'github-dark' : 'github';
+    codeThemeManager.setTheme(defaultCodeTheme);
+    
+    // 重新应用代码高亮
+    setTimeout(() => {
+        if (window.hljs) {
+            window.hljs.highlightAll();
+        }
+    }, 100);
 };
 
 // 根据主题返回对应的图标
@@ -191,6 +203,13 @@ onMounted(async () => {
         isDarkTheme.value = true;
         document.documentElement.setAttribute('data-theme', 'dark');
     }
+    
+    // 初始化代码高亮主题
+    codeThemeManager.init();
+    
+    // 根据当前主题设置对应的代码高亮主题
+    const defaultCodeTheme = isDarkTheme.value ? 'github-dark' : 'github';
+    codeThemeManager.setTheme(defaultCodeTheme);
     
     // 初始化认证状态
     await authStore.init();
