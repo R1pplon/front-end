@@ -33,6 +33,7 @@
                         </div>
                     </div>
                     <div class="actions">
+                        <CodeThemeSelector />
                         <button v-if="isAuthor" class="edit-btn">编辑</button>
                     </div>
                 </div>
@@ -92,6 +93,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { getArticleById } from '@/api/article';
 import { renderMarkdown, applyCodeHighlight } from '@/utils/markdown';
 import CommentTree from '@/components/comments/CommentTree.vue';
+import CodeThemeSelector from '@/components/CodeThemeSelector.vue';
 import { getArticleComments, addComment, deleteComment } from '@/api/article';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useAuthStore } from '@/stores/auth';

@@ -6,8 +6,8 @@ import App from "./App.vue";
 import router from "./router";
 import "./assets/global.css";
 
-// 引入 highlight.js 样式
-import "highlight.js/styles/github.css";
+// highlight.js 样式将通过动态主题系统加载
+// 不再在这里静态导入主题
 
 const app = createApp(App);
 const pinia = createPinia();
