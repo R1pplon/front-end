@@ -141,51 +141,7 @@
           </div>
         </div>
 
-        <!-- 评论列表 -->
-        <div class="detail-section" v-if="currentUserDetail.comments?.length > 0">
-          <div class="section-header">
-            <h3>最近评论</h3>
-            <el-tag type="primary" size="small">
-              共 {{ currentUserDetail.comments?.length || 0 }} 条评论
-            </el-tag>
-          </div>
-          <div class="comment-list">
-            <div 
-              v-for="comment in currentUserDetail.comments.slice(0, 5)" 
-              :key="comment.id"
-              class="comment-item"
-            >
-              <div class="comment-header">
-                <span 
-                  class="comment-article-title" 
-                  @click="() => goToArticle(comment)"
-                  :title="getArticleTitle(comment)"
-                >
-                  {{ getArticleTitle(comment) }}
-                </span>
-                <el-tag 
-                  v-if="comment.parent" 
-                  size="small" 
-                  type="info"
-                >
-                  回复评论
-                </el-tag>
-              </div>
-              <div class="comment-content">{{ comment.content }}</div>
-              <div class="comment-meta">
-                <span>{{ formatDate(comment.createTime) }}</span>
-                <el-button 
-                  type="danger" 
-                  size="small" 
-                  @click="deleteComment(comment)"
-                  :icon="Delete"
-                >
-                  删除
-                </el-button>
-              </div>
-            </div>
-          </div>
-        </div>
+
       </div>
       
       <template #footer>
@@ -255,9 +211,9 @@
 <script setup>
 import { ref, onMounted, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, Search, Delete, ArrowLeft } from '@element-plus/icons-vue'
+import { User, Search, ArrowLeft } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { adminUserAPI, adminCommentAPI } from '@/api/admin'
+import { adminUserAPI } from '@/api/admin'
 
 const router = useRouter()
 
@@ -353,45 +309,7 @@ const handleSearch = () => {
   // 实时搜索，通过computed已经实现
 }
 
-// 获取评论对应的文章
-const getCommentArticle = (comment) => {
-  if (!currentUserDetail.value?.articles) {
-    return null
-  }
-  
-  // 通过评论在文章的comments数组中查找对应的文章
-  for (const article of currentUserDetail.value.articles) {
-    if (article.comments?.some(c => c.id === comment.id)) {
-      return article
-    }
-  }
-  
-  return null
-}
 
-// 获取文章标题
-const getArticleTitle = (comment) => {
-  const article = getCommentArticle(comment)
-  return article ? article.title : '未知文章'
-}
-
-// 获取文章ID
-const getArticleId = (comment) => {
-  const article = getCommentArticle(comment)
-  return article ? article.id : null
-}
-
-// 跳转到文章页面
-const goToArticle = (comment) => {
-  const articleId = getArticleId(comment)
-  if (articleId) {
-    // 在新窗口打开文章页面
-    const routeUrl = router.resolve({ name: 'ArticleDetail', params: { id: articleId } })
-    window.open(routeUrl.href, '_blank')
-  } else {
-    ElMessage.warning('无法找到对应的文章')
-  }
-}
 
 // 获取用户列表
 const fetchUsers = async () => {
@@ -481,48 +399,7 @@ const deleteUser = async (user) => {
   }
 }
 
-// 删除评论
-const deleteComment = async (comment) => {
-  try {
-    await ElMessageBox.confirm(
-      `确定要删除这条评论吗？此操作不可恢复。`,
-      '确认删除',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
 
-    const response = await adminCommentAPI.deleteComment(comment.id)
-    if (response.data && response.data.code === 200) {
-      ElMessage.success('删除成功')
-      // 重新获取用户详情以刷新评论列表
-      await refreshUserDetail()
-    } else {
-      ElMessage.error(response.data?.message || '删除失败')
-    }
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('删除评论失败:', error)
-      ElMessage.error('删除评论失败')
-    }
-  }
-}
-
-// 刷新用户详情
-const refreshUserDetail = async () => {
-  if (!currentUserDetail.value) return
-  
-  try {
-    const response = await adminUserAPI.getUserById(currentUserDetail.value.id)
-    if (response.data && response.data.code === 200) {
-      currentUserDetail.value = response.data.data
-    }
-  } catch (error) {
-    console.error('刷新用户详情失败:', error)
-  }
-}
 
 // 提交用户信息
 const submitUser = async () => {
@@ -728,18 +605,7 @@ onMounted(() => {
   padding-bottom: 0.5rem;
 }
 
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
 
-.section-header h3 {
-  margin: 0;
-  border-bottom: none;
-  padding-bottom: 0;
-}
 
 .info-grid {
   display: grid;
@@ -759,61 +625,7 @@ onMounted(() => {
   min-width: 60px;
 }
 
-.comment-list {
-  max-height: 300px;
-  overflow-y: auto;
-}
 
-.comment-item {
-  background: var(--bg-secondary);
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 0.5rem;
-  border-left: 4px solid var(--text-link);
-}
-
-.comment-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.comment-article-title {
-  color: var(--text-link);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.9rem;
-  max-width: 60%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.comment-article-title:hover {
-  color: var(--text-link-hover);
-  text-decoration: underline;
-}
-
-.comment-content {
-  color: var(--text-primary);
-  margin-bottom: 0.5rem;
-  line-height: 1.5;
-}
-
-.comment-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-}
-
-.comment-meta span {
-  flex: 1;
-}
 
 @media (max-width: 768px) {
   .admin-users {
@@ -844,30 +656,6 @@ onMounted(() => {
     grid-template-columns: 1fr;
   }
   
-  .section-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  
-  .comment-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-  }
-  
-  .comment-article-title {
-    max-width: 100%;
-  }
-  
-  .comment-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  
-  .comment-meta span {
-    flex: none;
-  }
+
 }
 </style> 
