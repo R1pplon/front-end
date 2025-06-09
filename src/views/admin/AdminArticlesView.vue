@@ -406,15 +406,15 @@ onMounted(() => {
   align-items: flex-start;
   margin-bottom: 2rem;
   padding: 1.5rem;
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow);
 }
 
 .header-left h1 {
   font-size: 1.8rem;
   font-weight: 600;
-  color: #2d3748;
+  color: var(--text-primary);
   margin: 0 0 0.5rem 0;
   display: flex;
   align-items: center;
@@ -422,7 +422,7 @@ onMounted(() => {
 }
 
 .header-left p {
-  color: #718096;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -433,10 +433,10 @@ onMounted(() => {
 }
 
 .articles-list {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow);
 }
 
 :deep(.el-table) {
@@ -444,30 +444,80 @@ onMounted(() => {
   overflow: hidden;
 }
 
+:deep(.el-table) {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+}
+
 :deep(.el-table th) {
-  background-color: #f7fafc;
+  background-color: var(--bg-secondary);
   font-weight: 600;
-  color: #2d3748;
+  color: var(--text-primary);
+}
+
+:deep(.el-table td) {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+:deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
+  background-color: var(--bg-secondary);
+}
+
+:deep(.el-table--striped .el-table__fixed-right .el-table__body tr.el-table__row--striped td) {
+  background-color: var(--bg-secondary);
+}
+
+:deep(.el-table__body tr:hover > td) {
+  background-color: var(--bg-secondary) !important;
+}
+
+:deep(.el-table__fixed-right .el-table__body tr:hover > td) {
+  background-color: var(--bg-secondary) !important;
 }
 
 :deep(.el-dialog) {
   border-radius: 12px;
+  background-color: var(--bg-card);
 }
 
 :deep(.el-dialog__header) {
-  background-color: #f7fafc;
-  border-bottom: 1px solid #e2e8f0;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
   border-radius: 12px 12px 0 0;
 }
 
 :deep(.el-dialog__title) {
   font-weight: 600;
-  color: #2d3748;
+  color: var(--text-primary);
+}
+
+:deep(.el-dialog__body) {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+}
+
+:deep(.el-dialog__footer) {
+  background-color: var(--bg-card);
+  border-top: 1px solid var(--border-color);
 }
 
 :deep(.el-form-item__label) {
   font-weight: 600;
-  color: #4a5568;
+  color: var(--text-primary);
+}
+
+:deep(.el-input__inner) {
+  background-color: var(--bg-primary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+:deep(.el-textarea__inner) {
+  background-color: var(--bg-primary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
 }
 
 :deep(.el-textarea__inner) {

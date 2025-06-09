@@ -128,7 +128,7 @@ onMounted(async () => {
 <style scoped>
 .admin-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-color: var(--bg-primary);
   padding: 2rem;
 }
 
@@ -140,7 +140,10 @@ onMounted(async () => {
 .dashboard-header {
   text-align: center;
   margin-bottom: 3rem;
-  color: white;
+  background-color: var(--bg-card);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
 }
 
 .page-title {
@@ -151,12 +154,13 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  color: var(--text-primary);
 }
 
 .page-subtitle {
   font-size: 1.1rem;
-  opacity: 0.9;
   margin: 0;
+  color: var(--text-secondary);
 }
 
 .dashboard-grid {
@@ -167,91 +171,53 @@ onMounted(async () => {
 }
 
 .dashboard-card {
-  background: white;
-  border-radius: 20px;
+  background: var(--bg-card);
+  border-radius: 12px;
   padding: 2rem;
   text-decoration: none;
   color: inherit;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow);
   transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.dashboard-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #667eea, #764ba2);
+  border: 1px solid var(--border-color);
 }
 
 .dashboard-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-}
-
-.articles-card:hover::before {
-  background: linear-gradient(90deg, #667eea, #764ba2);
-}
-
-.users-card:hover::before {
-  background: linear-gradient(90deg, #f093fb, #f5576c);
-}
-
-.comments-card:hover::before {
-  background: linear-gradient(90deg, #4facfe, #00f2fe);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--text-link);
 }
 
 .card-icon {
   font-size: 3rem;
   margin-bottom: 1rem;
-  color: #667eea;
-}
-
-.users-card .card-icon {
-  color: #f5576c;
-}
-
-.comments-card .card-icon {
-  color: #4facfe;
+  color: var(--text-link);
 }
 
 .card-content h3 {
   font-size: 1.5rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
-  color: #2d3748;
+  color: var(--text-primary);
 }
 
 .card-content p {
-  color: #718096;
+  color: var(--text-secondary);
   margin-bottom: 1.5rem;
   line-height: 1.6;
 }
 
 .card-action {
-  color: #667eea;
+  color: var(--text-link);
   font-weight: 600;
   font-size: 0.95rem;
 }
 
-.users-card .card-action {
-  color: #f5576c;
-}
-
-.comments-card .card-action {
-  color: #4facfe;
-}
-
 .stats-section {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
+  background: var(--bg-card);
+  border-radius: 12px;
   padding: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow);
 }
 
 .stats-grid {
@@ -262,18 +228,18 @@ onMounted(async () => {
 
 .stat-item {
   text-align: center;
-  color: white;
 }
 
 .stat-number {
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
+  color: var(--text-link);
 }
 
 .stat-label {
   font-size: 1rem;
-  opacity: 0.9;
+  color: var(--text-secondary);
 }
 
 @media (max-width: 768px) {

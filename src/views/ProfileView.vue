@@ -73,7 +73,13 @@
                 <div class="comments-list" v-if="comments.length > 0">
                     <div v-for="comment in comments" :key="comment.id" class="comment-card">
                         <div class="comment-header">
-                            <span class="article-title">{{ comment.articleTitle }}</span>
+                            <span 
+                                class="article-title clickable" 
+                                @click="goToArticle(comment)"
+                                :title="comment.articleTitle"
+                            >
+                                {{ comment.articleTitle }}
+                            </span>
                             <span class="comment-time">{{ formatDateSimple(comment.createTime) }}</span>
                         </div>
                         <div class="comment-content">{{ truncateText(comment.content, 10) }}</div>
@@ -110,9 +116,16 @@ const fetchUserComments = async () => {
         const response = await request.get('/comment/');
         if (response.data.code === 200) {
             // 只获取当前用户的评论
-            comments.value = response.data.data.filter(
+            const userComments = response.data.data.filter(
                 comment => comment.username === authStore.username
             );
+            
+            // 打印评论数据结构以便调试
+            if (userComments.length > 0) {
+                console.log('评论数据结构:', userComments[0]);
+            }
+            
+            comments.value = userComments;
         }
     } catch (error) {
         console.error('获取评论列表失败:', error);
@@ -144,6 +157,43 @@ const formatDateSimple = (dateString) => {
 const truncateText = (text, maxLength) => {
     if (!text) return '';
     return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
+};
+
+// 跳转到文章页面
+const goToArticle = async (comment) => {
+    // 首先检查评论数据中是否直接包含 articleId
+    if (comment.articleId) {
+        const routeUrl = router.resolve({ name: 'ArticleDetail', params: { id: comment.articleId } });
+        window.open(routeUrl.href, '_blank');
+        return;
+    }
+    
+    // 如果没有 articleId，尝试通过获取所有文章来查找匹配的标题
+    if (comment.articleTitle) {
+        try {
+            const response = await request.get('/article/');
+            if (response.data.code === 200) {
+                const articles = response.data.data;
+                const matchedArticle = articles.find(article => 
+                    article.title === comment.articleTitle
+                );
+                
+                if (matchedArticle) {
+                    const routeUrl = router.resolve({ name: 'ArticleDetail', params: { id: matchedArticle.id } });
+                    window.open(routeUrl.href, '_blank');
+                } else {
+                    ElMessage.warning('无法找到对应的文章');
+                }
+            } else {
+                ElMessage.warning('获取文章列表失败');
+            }
+        } catch (error) {
+            console.error('查找文章失败:', error);
+            ElMessage.error('查找文章失败');
+        }
+    } else {
+        ElMessage.warning('无法找到对应的文章');
+    }
 };
 
 // 开始编辑
@@ -486,6 +536,22 @@ h2 {
     font-weight: 600;
     color: var(--text-primary);
     font-size: 1.1rem;
+}
+
+.article-title.clickable {
+    color: var(--text-link);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.article-title.clickable:hover {
+    color: var(--text-link-hover);
+    text-decoration: underline;
 }
 
 .comment-time {
