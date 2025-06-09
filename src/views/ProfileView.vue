@@ -27,15 +27,7 @@
                 </div>
 
                 <div class="profile-info" v-if="!isEditing">
-                    <div class="info-item">
-                        <span class="label">邮箱:</span>
-                        <span class="value">{{ authStore.email || '未设置' }}</span>
-                    </div>
-
-                    <div class="info-item">
-                        <span class="label">注册日期:</span>
-                        <span class="value">{{ formatDate(authStore.createdAt) }}</span>
-                    </div>
+                    
 
                     <div class="info-item">
                         <span class="label">个人简介:</span>
@@ -220,7 +212,7 @@ const saveProfile = async () => {
             updateData.password = editForm.value.password;
         }
 
-        const response = await request.put('/api/user/info', updateData);
+        const response = await request.put('/user/info', updateData);
         if (response.data.code === 200) {
             // 更新全局状态
             authStore.updateUser(response.data.data);

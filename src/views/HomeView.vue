@@ -22,7 +22,7 @@
                 <div class="info-item">
                     <i class="icon">👨‍💻</i>
                     <span class="label">GitHub:</span>
-                    <a href="https://github.com/your-username" target="_blank" class="value">github.com/R1pple</a>
+                    <a href="https://github.com/R1pplon" target="_blank" class="value">github.com/R1pple</a>
                 </div>
 
                 <div class="info-item">

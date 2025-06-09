@@ -11,7 +11,6 @@
                 <div class="form-group">
                     <label for="username">用户名</label>
                     <div class="input-with-icon">
-                        <i class="fas fa-user"></i>
                         <input type="text" id="username" v-model="formData.username" placeholder="输入用户名 (4-20字符)"
                             :class="{ 'error': errors.username }" @blur="validateField('username')">
                     </div>
@@ -21,7 +20,6 @@
                 <div class="form-group">
                     <label for="email">邮箱</label>
                     <div class="input-with-icon">
-                        <i class="fas fa-envelope"></i>
                         <input type="email" id="email" v-model="formData.email" placeholder="输入邮箱地址"
                             :class="{ 'error': errors.email }" @blur="validateField('email')">
                     </div>
@@ -31,7 +29,6 @@
                 <div class="form-group">
                     <label for="password">密码</label>
                     <div class="input-with-icon">
-                        <i class="fas fa-lock"></i>
                         <input type="password" id="password" v-model="formData.password" placeholder="输入密码 (至少6位)"
                             :class="{ 'error': errors.password }" @blur="validateField('password')">
                     </div>
@@ -41,7 +38,6 @@
                 <div class="form-group">
                     <label for="confirmPassword">确认密码</label>
                     <div class="input-with-icon">
-                        <i class="fas fa-lock"></i>
                         <input type="password" id="confirmPassword" v-model="formData.confirmPassword"
                             placeholder="再次输入密码" :class="{ 'error': errors.confirmPassword }"
                             @blur="validateField('confirmPassword')">
